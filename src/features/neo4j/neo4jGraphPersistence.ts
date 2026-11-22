@@ -9,7 +9,7 @@ import { assertGraphPersistenceOperation } from '@ankhorage/graph/persistence';
 
 import { executeNeo4jMutationAsync } from './executeNeo4jMutationAsync.js';
 import { executeNeo4jTraversalAsync, readNeo4jNodesAsync } from './executeNeo4jTraversalAsync.js';
-import { getNeo4jNodeLabel } from './neo4jStorage.js';
+import { getNeo4jEdgeIdentityLabel, getNeo4jNodeLabel } from './neo4jStorage.js';
 import type { Neo4jGraphPersistenceOptions } from './neo4jTransport.js';
 import type { Neo4jQuery } from './neo4jTransport.js';
 import { createNeo4jTransport } from './neo4jTransport.js';
@@ -40,7 +40,9 @@ export async function prepareNeo4jGraphPersistenceAsync(
   });
   await transport.queryAsync('POST', '', {
     statement:
-      'CREATE CONSTRAINT ankh_graph_edge_id IF NOT EXISTS FOR ()-[e]-() REQUIRE e.ankhId IS UNIQUE',
+      'CREATE CONSTRAINT ankh_graph_edge_identity_id IF NOT EXISTS FOR (identity:' +
+      getNeo4jEdgeIdentityLabel() +
+      ') REQUIRE identity.ankhId IS UNIQUE',
   });
 }
 

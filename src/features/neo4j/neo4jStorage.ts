@@ -1,6 +1,7 @@
 import type { GraphStorageData, StoredGraphNode } from '@ankhorage/graph/persistence';
 
 const nodeLabel = 'AnkhGraphNode';
+const edgeIdentityLabel = 'AnkhGraphEdgeIdentity';
 const scalarPrefix = 'ankhProperty_';
 
 /*** Convert portable data into exact Neo4j properties while keeping scalar fields natively filterable. */
@@ -37,6 +38,11 @@ export function quoteNeo4jIdentifier(value: string): string {
 /*** Build the required persistent node label. */
 export function getNeo4jNodeLabel(): string {
   return nodeLabel;
+}
+
+/*** Build the private registry-node label that enforces edge identity across relationship types. */
+export function getNeo4jEdgeIdentityLabel(): string {
+  return edgeIdentityLabel;
 }
 
 /*** Decode exactly the JSON data written by this adapter. */
