@@ -240,9 +240,81 @@ test('conformance traversal-inclusion-and-order and cursor-consistency retain en
   assert.ok(r.nextCursor);
   assert.match(statements[0], /ORDER BY e\.ankhIdentityId/u);
   assert.match(statements[0], /RETURN e\.ankhIdentityId/u);
+  assert.match(statements[0], /ALL\(n IN nodes\(p\) WHERE n:AnkhGraphNode\)/u);
+  assert.match(statements[0], /ALL\(r IN relationships\(p\) WHERE r\.ankhIdentityId IS NOT NULL/u);
   await assert.rejects(
     session.executeAsync({ ...q, direction: 'incoming', cursor: r.nextCursor }),
     /cursor/,
+  );
+});
+
+test('traversal excludes an unowned relationship and the adapter edge beyond it', async () => {
+  const statements = [];
+  const fetcher = async (url, req) => {
+    if (req.body?.includes('MATCH (s:AnkhGraphNode)')) {
+      statements.push(JSON.parse(req.body).statement);
+      // The provider fixture has a stored edge a->b, an unrelated b->external relationship,
+      // and a stored external->c edge. Only the path wholly owned by this adapter is returned.
+      return answer([['stored-a-b', 'a', 'b', 'ROLE_AT', JSON.stringify({ properties: {} })]]);
+    }
+    return answer([
+      ['a', ['AnkhGraphNode', 'Person'], JSON.stringify({ properties: {} })],
+      ['b', ['AnkhGraphNode', 'Company'], JSON.stringify({ properties: {} })],
+    ]);
+  };
+  const session = await createNeo4jGraphPersistencePort({ ...settings, fetcher }).openAsync();
+  const result = await session.executeAsync({
+    kind: 'traverse',
+    startNodeIds: ['a'],
+    direction: 'outgoing',
+    maxDepth: 3,
+    pageSize: 10,
+  });
+  assert.deepEqual(
+    result.edges.map((edge) => edge.id),
+    ['stored-a-b'],
+  );
+  assert.match(statements[0], /ALL\(n IN nodes\(p\) WHERE n:AnkhGraphNode\)/u);
+  assert.match(statements[0], /ALL\(r IN relationships\(p\) WHERE r\.ankhIdentityId IS NOT NULL/u);
+});
+
+test('traversal rejects a cross-scope cursor before empty-root and zero-depth fast returns', async () => {
+  const fetcher = async () => {
+    throw new Error('cursor validation must not issue a provider query');
+  };
+  const session = await createNeo4jGraphPersistencePort({ ...settings, fetcher }).openAsync();
+  const cursor = Buffer.from(
+    JSON.stringify({
+      version: 1,
+      offset: 0,
+      ids: ['a'],
+      direction: 'outgoing',
+      maxDepth: 1,
+      pageSize: 1,
+      types: null,
+    }),
+  ).toString('base64url');
+  await assert.rejects(
+    session.executeAsync({
+      kind: 'traverse',
+      startNodeIds: [],
+      direction: 'outgoing',
+      maxDepth: 1,
+      pageSize: 1,
+      cursor,
+    }),
+    /cursor/u,
+  );
+  await assert.rejects(
+    session.executeAsync({
+      kind: 'traverse',
+      startNodeIds: ['a'],
+      direction: 'outgoing',
+      maxDepth: 0,
+      pageSize: 1,
+      cursor,
+    }),
+    /cursor/u,
   );
 });
 

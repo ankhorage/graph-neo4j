@@ -19,6 +19,7 @@ export async function executeNeo4jTraversalAsync(
   reader: Neo4jReader,
   operation: GraphPersistenceTraversalOperation,
 ): Promise<GraphPersistenceTraversalResult> {
+  const offset = decodeTraversalCursor(operation);
   if (operation.startNodeIds.length === 0)
     return { kind: 'traversal', nodes: [], edges: [], cursorConsistency: 'live' };
   if (operation.maxDepth === 0) {
@@ -29,7 +30,6 @@ export async function executeNeo4jTraversalAsync(
       cursorConsistency: 'live',
     };
   }
-  const offset = decodeTraversalCursor(operation);
   const result = await reader.queryAsync({
     statement: createTraversalStatement(operation),
     parameters: {
@@ -84,7 +84,7 @@ async function readNodesAsync(reader: Neo4jReader, ids: readonly string[]) {
   });
 }
 
-/*** Build a directed Cypher pattern while retaining native relationship-type filtering. */
+/*** Build a directed Cypher pattern confined to canonical adapter-owned graph paths. */
 function createTraversalStatement(operation: GraphPersistenceTraversalOperation): string {
   const arrow =
     operation.direction === 'incoming'
@@ -97,7 +97,9 @@ function createTraversalStatement(operation: GraphPersistenceTraversalOperation)
     getNeo4jNodeLabel() +
     ') WHERE s.ankhId IN $ids MATCH p=(s)' +
     arrow +
-    '() WHERE ALL(r IN relationships(p) WHERE $anyType OR type(r) IN $types) UNWIND relationships(p) AS e WITH DISTINCT e ORDER BY e.ankhIdentityId SKIP $offset LIMIT $limit RETURN e.ankhIdentityId, startNode(e).ankhId, endNode(e).ankhId, type(e), e.ankhData'
+    '() WHERE ALL(n IN nodes(p) WHERE n:' +
+    getNeo4jNodeLabel() +
+    ') AND ALL(r IN relationships(p) WHERE r.ankhIdentityId IS NOT NULL AND ($anyType OR type(r) IN $types)) UNWIND relationships(p) AS e WITH DISTINCT e ORDER BY e.ankhIdentityId SKIP $offset LIMIT $limit RETURN e.ankhIdentityId, startNode(e).ankhId, endNode(e).ankhId, type(e), e.ankhData'
   );
 }
 
