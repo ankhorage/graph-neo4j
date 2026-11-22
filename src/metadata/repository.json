@@ -1,0 +1,32 @@
+{
+  "schemaVersion": 1,
+  "kind": "adapter",
+  "title": "Ankhorage Neo4j Graph",
+  "summary": "Provides a concrete Neo4j persistence adapter for the canonical Ankhorage Graph persistence port.",
+  "purpose": "Implement portable, identity-stable graph persistence using Neo4j Query API v2 without leaking provider-specific Cypher into consumers.",
+  "domain": "graph database persistence",
+  "responsibilities": [
+    "Map the published Graph persistence port to Neo4j nodes, typed directed relationships, bounded traversals and explicit transactions.",
+    "Own Neo4j authentication, Query API v2 transport, schema preparation, provider-specific error reporting and redaction."
+  ],
+  "boundaries": [
+    "Does not own generic Graph persistence contracts, graph algorithms or application business entities.",
+    "Does not use unapproved third-party drivers, persist secrets into application manifests, or implement a separate Cypher abstraction."
+  ],
+  "audience": ["Application and service developers requiring Neo4j-backed graph persistence."],
+  "architecture": {
+    "role": "Concrete outbound adapter and composition for a provider-neutral graph port.",
+    "invariants": [
+      "Only released public @ankhorage/graph persistence APIs are imported.",
+      "Mutation operations commit atomically and preserve stable node and relationship identities.",
+      "Neo4j-specific transport details and authorization remain server-side."
+    ]
+  },
+  "constraints": {
+    "limitations": [
+      "Requires a released @ankhorage/graph persistence port and an explicitly prepared Neo4j schema.",
+      "Query API v2 explicit transactions require Aura or compatible single-instance/affinity routing.",
+      "Arbitrary nested portable graph properties are serialized as a lossless JSON field, not native indexed properties."
+    ]
+  }
+}
