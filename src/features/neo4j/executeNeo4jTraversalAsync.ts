@@ -21,6 +21,14 @@ export async function executeNeo4jTraversalAsync(
 ): Promise<GraphPersistenceTraversalResult> {
   if (operation.startNodeIds.length === 0)
     return { kind: 'traversal', nodes: [], edges: [], cursorConsistency: 'live' };
+  if (operation.maxDepth === 0) {
+    return {
+      kind: 'traversal',
+      nodes: await readNodesAsync(reader, operation.startNodeIds),
+      edges: [],
+      cursorConsistency: 'live',
+    };
+  }
   const offset = decodeTraversalCursor(operation);
   const result = await reader.queryAsync({
     statement: createTraversalStatement(operation),
@@ -89,7 +97,7 @@ function createTraversalStatement(operation: GraphPersistenceTraversalOperation)
     getNeo4jNodeLabel() +
     ') WHERE s.ankhId IN $ids MATCH p=(s)' +
     arrow +
-    '() WHERE ALL(r IN relationships(p) WHERE $anyType OR type(r) IN $types) UNWIND relationships(p) AS e WITH DISTINCT e ORDER BY e.ankhId SKIP $offset LIMIT $limit RETURN e.ankhId, startNode(e).ankhId, endNode(e).ankhId, type(e), e.ankhData'
+    '() WHERE ALL(r IN relationships(p) WHERE $anyType OR type(r) IN $types) UNWIND relationships(p) AS e WITH DISTINCT e ORDER BY e.ankhIdentityId SKIP $offset LIMIT $limit RETURN e.ankhIdentityId, startNode(e).ankhId, endNode(e).ankhId, type(e), e.ankhData'
   );
 }
 

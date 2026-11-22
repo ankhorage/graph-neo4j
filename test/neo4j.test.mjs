@@ -202,12 +202,15 @@ test('read nodes preserves order and nested portable properties', async () => {
 });
 
 test('conformance traversal-inclusion-and-order and cursor-consistency retain endpoint nodes and scope', async () => {
+  const statements = [];
   const fetcher = async (url, req) => {
-    if (req.body?.includes('MATCH (s:AnkhGraphNode)'))
+    if (req.body?.includes('MATCH (s:AnkhGraphNode)')) {
+      statements.push(JSON.parse(req.body).statement);
       return answer([
         ['e1', 'a', 'b', 'ROLE_AT', JSON.stringify({ properties: { validFrom: '2023-01-01' } })],
         ['e2', 'a', 'b', 'ROLE_AT', JSON.stringify({ properties: { validTo: 'open' } })],
       ]);
+    }
     return answer([
       ['a', ['AnkhGraphNode', 'Person'], JSON.stringify({ properties: {} })],
       ['b', ['AnkhGraphNode', 'Company'], JSON.stringify({ properties: {} })],
@@ -235,9 +238,40 @@ test('conformance traversal-inclusion-and-order and cursor-consistency retain en
   );
   assert.equal(r.cursorConsistency, 'live');
   assert.ok(r.nextCursor);
+  assert.match(statements[0], /ORDER BY e\.ankhIdentityId/u);
+  assert.match(statements[0], /RETURN e\.ankhIdentityId/u);
   await assert.rejects(
     session.executeAsync({ ...q, direction: 'incoming', cursor: r.nextCursor }),
     /cursor/,
+  );
+});
+
+test('zero-depth traversal returns only start nodes without issuing a variable-length Cypher query', async () => {
+  const statements = [];
+  const fetcher = async (url, req) => {
+    const statement = JSON.parse(req.body).statement;
+    statements.push(statement);
+    return answer([
+      ['a', ['AnkhGraphNode', 'Person'], JSON.stringify({ properties: { active: true } })],
+    ]);
+  };
+  const session = await createNeo4jGraphPersistencePort({ ...settings, fetcher }).openAsync();
+  const result = await session.executeAsync({
+    kind: 'traverse',
+    startNodeIds: ['a'],
+    direction: 'outgoing',
+    maxDepth: 0,
+    pageSize: 1,
+  });
+  assert.deepEqual(result, {
+    kind: 'traversal',
+    nodes: [{ id: 'a', labels: ['Person'], data: { properties: { active: true } } }],
+    edges: [],
+    cursorConsistency: 'live',
+  });
+  assert.equal(
+    statements.some((statement) => statement.includes('MATCH p=')),
+    false,
   );
 });
 
