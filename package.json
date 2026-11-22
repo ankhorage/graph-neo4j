@@ -1,19 +1,40 @@
 {
-  "name": "@ankhorage/graphdb-neo4j",
+  "name": "@ankhorage/graph-neo4j",
   "version": "0.1.0",
-  "description": "Neo4j Query API v2 adapter for the provider-neutral Ankhorage graph database port.",
+  "description": "Neo4j Query API v2 adapter for the canonical Ankhorage Graph persistence port.",
   "license": "MIT",
-  "homepage": "https://github.com/ankhorage/graphdb-neo4j#readme",
-  "bugs": { "url": "https://github.com/ankhorage/graphdb-neo4j/issues" },
-  "keywords": ["ankhorage", "graphdb", "neo4j"],
-  "publishConfig": { "access": "public" },
+  "homepage": "https://github.com/ankhorage/graph-neo4j#readme",
+  "bugs": {
+    "url": "https://github.com/ankhorage/graph-neo4j/issues"
+  },
+  "keywords": [
+    "ankhorage",
+    "graph",
+    "neo4j",
+    "persistence"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
   "type": "module",
   "sideEffects": false,
-  "files": ["dist", "CHANGELOG.md", "LICENSE"],
+  "files": [
+    "dist",
+    "CHANGELOG.md",
+    "LICENSE"
+  ],
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
-  "exports": { ".": { "types": "./dist/index.d.ts", "import": "./dist/index.js" } },
-  "repository": { "type": "git", "url": "git+https://github.com/ankhorage/graphdb-neo4j.git" },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ankhorage/graph-neo4j.git"
+  },
   "packageManager": "bun@1.4.2",
   "scripts": {
     "build": "rm -rf dist tsconfig.tsbuildinfo tsconfig.build.tsbuildinfo && bun x tsc -p tsconfig.build.json",
@@ -30,9 +51,11 @@
     "changeset:status": "ankhorage-changeset status --since=origin/main",
     "version-packages": "ankhorage-changeset version"
   },
-  "dependencies": { "@ankhorage/graphdb": "^0.1.0" },
+  "dependencies": {
+    "@ankhorage/graph": "0.4.0"
+  },
   "devDependencies": {
-    "@ankhorage/devtools": "^2.9.7",
+    "@ankhorage/devtools": "^2.9.9",
     "@ankhorage/paradox": "^0.6.0",
     "@types/bun": "^1.4.2",
     "@types/node": "^26.6.6",

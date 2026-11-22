@@ -1,5 +1,5 @@
+export type { Neo4jGraphPersistenceOptions } from './features/neo4j/neo4jGraphPersistence.js';
 export {
-  createNeo4jGraphDatabasePort,
-  prepareNeo4jGraphDatabaseAsync,
-} from './features/neo4j/neo4jGraphDatabase.js';
-export type { Neo4jGraphDatabaseOptions } from './features/neo4j/neo4jGraphDatabase.js';
+  createNeo4jGraphPersistencePort,
+  prepareNeo4jGraphPersistenceAsync,
+} from './features/neo4j/neo4jGraphPersistence.js';
